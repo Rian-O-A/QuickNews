@@ -8,34 +8,26 @@ openai.api_key = pacote["key_api"]
 model_engine = pacote["model_engine"]
 
 
-def raspar_noticias(veiculo):
+def raspar_noticias():
    
-    html = requests.get(pacote[veiculo]["url"]).content
+    html = requests.get("https://gizmodo.uol.com.br/tecnologia/").content
     soup = BeautifulSoup(html, 'html.parser')
-    data_noti = soup.find_all("time", {"class": pacote[veiculo]["time_class"]}) # pega a clase time da data
-    links_noticias = soup.find_all("a", {"class": pacote[veiculo]["a_class"]}) # pega a clase A onde fica o hiper link com o texto da noticia  
+    brute_title = soup.find_all("h3", {"class": 'postTitle entry-title'}) 
+    brute_datas = soup.find_all("abbr", {"class": 'published updated'})
     
     data = []
-    noticias = {}
-    data_atual = str(date.today()) #pega a data atual 
+    data_exten = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"]
+    for title in brute_title:
+        print(title.text)
+
+    for dat in brute_datas:
+        data_cortada = dat.get("title").split("de")
+        mes = data_exten.index(data_cortada[1].title().strip()) + 1
+        data.append(f"{data_cortada[2]}-{mes}-{data_cortada[0]}")
+
 
     
-    for dat in data_noti: # pega o valor da tag datetime
-        data.append(dat.get("datetime"))
-
-    
-    for infor in links_noticias:  # pegas as noticias com a data atual do dia
-        if data[links_noticias.index(infor)] == data_atual:
-            
-            if data[links_noticias.index(infor)] not in noticias:
-                noticias[data[links_noticias.index(infor)]] = [{"title":infor.text}]
-            else:
-                noticias[data[links_noticias.index(infor)]].append({"title":infor.text})
-        else:
-            break
-    
-    return (noticias, data_atual, veiculo)
-
+   
 
 def pesquisar_chatGPT(dados):
     noticias= dados[0]
@@ -51,7 +43,7 @@ def pesquisar_chatGPT(dados):
                 completion = openai.Completion.create(
                 engine=model_engine,
                 prompt=prompt,
-                max_tokens=2048,
+                max_tokens=1024,
                 n=1,
                 stop=None,
                 temperature=0.5)
@@ -67,4 +59,4 @@ def pesquisar_chatGPT(dados):
     
 
 
-# pesquisar_chatGPT(raspar_noticias("bbc"))
+raspar_noticias()
